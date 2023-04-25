@@ -1,6 +1,9 @@
 # mulesoft-api-gateway-portal
+
 Mulesoft API gateway web portal, enables you to create Anypoint exchange assets, non-mule api proxies (in Runtime Fabric -RTF), contracts, applications.
 This initial version supports MuleSoft Classic gateway for non-mule proxy deployment using web UI.
+
+
 Prerequisites:
   i. Anypoint platform credentials/login
   ii. Create connected app in Anypoint Access Manager with grant_type=authorization code and redirect url = https://localhost:5001/anypointcallback
@@ -8,6 +11,7 @@ Prerequisites:
 
 In the appsettings.json file add your Anypoint platform details like organization id, business group id, domain, connected app credentials, environment id,
 rtf target id and name
+
 
   "AnyPoint": {
     "MasterOrganizationId": "",
