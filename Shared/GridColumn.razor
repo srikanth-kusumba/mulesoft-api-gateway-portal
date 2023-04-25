@@ -1,0 +1,15 @@
+﻿<th style="background-color:#0171AD">
+    <div class="col-10 row" style="color:white">
+        <h6 small>@ColumnTitle</h6>
+        <input class="form-control form-control-sm" hidden="@HideSeachText" placeholder="search" @oninput="OnSearchTextChanged" />
+    </div>
+
+</th>
+@code {
+    [Parameter]
+    public string ColumnTitle { get; set; }
+    [Parameter]
+    public EventCallback<ChangeEventArgs> OnSearchTextChanged { get; set; }
+    [Parameter]
+    public bool HideSeachText { get; set; }
+}

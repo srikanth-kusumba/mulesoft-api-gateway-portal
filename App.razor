@@ -1,0 +1,32 @@
+﻿@using ControlPlane.Shared
+@*<CascadingAuthenticationState>*@
+<Router AppAssembly="@typeof(Program).Assembly">
+    <Found Context="routeData">
+        <AuthorizeRouteView RouteData="@routeData"
+                            DefaultLayout="@typeof(MainLayout)">
+            <NotAuthorized>
+                <h3>Sorry</h3>
+                <p>You are not logged in (OR)</p>
+                <p>You are not authorized to reach this page / You don't have the required role</p>
+                <p>You can request required roles <a href="rolesubscription" title="click here for role request">here</a></p>
+                <p>Please request for:</p>
+                <ul>
+                    <li>MuleSoft Role for MuleSoft control plane </li>
+                    <li>AWS Role for AWS control plane</li>
+                    <li>apigee Role for apigee control plane </li>
+                </ul>
+            </NotAuthorized>
+            <Authorizing>
+                <h1>Authentication in progress</h1>
+            </Authorizing>
+        </AuthorizeRouteView>
+    </Found>
+    <NotFound>
+        <CascadingAuthenticationState>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <p>Sorry, there's nothing at this address.</p>
+            </LayoutView>
+        </CascadingAuthenticationState>
+    </NotFound>
+</Router>
+@*</CascadingAuthenticationState>*@

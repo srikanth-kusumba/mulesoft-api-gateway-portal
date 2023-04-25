@@ -1,0 +1,140 @@
+﻿@page "/assetdiscovery"
+
+<PageTitle>Exchange Assets</PageTitle>
+
+@*@attribute [Authorize(Roles = "mulesoft_admin")]*@
+
+@using ControlPlane.Data.GatewayModels;
+@using ControlPlane.IntegrationServices.AnyPointPlatform;
+
+@inject NavigationManager Navigation
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject PlatformAPIService PlatformAPIService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h5>Discover Exchange Assets</h5>
+<hr />
+
+@if (filteredexchangeAssets == null)
+{
+    <p><em>Loading...</em></p>
+    <div class="spinner-border"></div>
+}
+else
+{
+    <div class="table-responsive">
+        <GridView Items="filteredexchangeAssets" ReloadList="@IsGridViewFiltered">
+            <GridColumns>
+                <GridColumn ColumnTitle="Asset Id" OnSearchTextChanged="@(e=>OnSearchTextChanged(e,"AssetId"))"></GridColumn>
+                <GridColumn ColumnTitle="Asset Version" HideSeachText=true></GridColumn>
+                <GridColumn ColumnTitle="Name" HideSeachText=true></GridColumn>
+                <GridColumn ColumnTitle="Status" OnSearchTextChanged="@(e=>OnSearchTextChanged(e,"Status"))"></GridColumn>
+                <GridColumn ColumnTitle="Delete" HideSeachText=true></GridColumn>
+            </GridColumns>
+            <GridRow Context="asset">
+                <td style="text-align:center">
+                    <a href="createapi/asset/@asset.AssetId/version/@asset.Version">@asset.AssetId</a>
+                    @*<a href="createanddeployapi/@asset.AssetId">@asset.AssetId</a>*@
+                </td>
+                <td style="text-align:center">
+                    <span class="d-inline-block text-truncate">
+                        @asset.Version
+                    </span>
+                </td>
+                <td style="text-align:center">
+                    <span class="d-inline-block text-truncate">
+                        @asset.Name
+                    </span>
+                </td>
+                <td style="text-align:center">
+                    <span class="d-inline-block text-truncate">
+                        @asset.Status
+                    </span>
+                </td>
+                <td>                    
+                    <button class="btn" @onclick="@(e=>Delete_Click(@asset.AssetId))"><i class="oi oi-trash"></i></button>
+                </td>
+            </GridRow>
+        </GridView>
+        <ConfirmMsg @ref="DeleteConfirmation" ConfirmationChanged="ConfirmDelete_Click"
+                ConfirmationMessage=@($"Are you sure you want to delete this interface...?")>
+        </ConfirmMsg>
+
+    </div>
+}
+
+@code {
+    private List<ExchangeAsset>? exchangeAssets { get; set; }
+    private List<ExchangeAsset>? filteredexchangeAssets { get; set; }
+    public bool IsGridViewFiltered { get; set; }
+    public string AssetIdSearchText { get; set; }
+    public string AssetStatusSearchText { get; set; }
+    private ConfirmBase DeleteConfirmation { get; set; }
+    private string assetTobeDeleted { get; set; }
+    protected string anypoint_token = "";
+    public string Status { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        anypoint_token = await sessionStorage.GetItemAsync<string>("anypoint_token");
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var anypointIdentity = authState.User.Identity.Name;
+
+        if (anypointIdentity != null)
+        {
+            exchangeAssets = await PlatformAPIService.GetExchangeRestAPIAssetsAsync(anypoint_token);
+            filteredexchangeAssets = exchangeAssets;
+        }
+        else
+        {
+            Status = "Please login to AnyPoint to publish an asset";
+        }
+    }
+   
+    private void OnSearchTextChanged(ChangeEventArgs changedEventArgs, string columnTitle)
+    {
+        string searchText = changedEventArgs.Value.ToString();
+
+        if (columnTitle == "AssetId")
+        {
+            AssetIdSearchText = searchText;
+        }
+        else if (columnTitle == "Status")
+        {
+            AssetStatusSearchText = searchText;
+        }
+        
+        filteredexchangeAssets = exchangeAssets.Where(li => (string.IsNullOrEmpty(AssetIdSearchText) || li.AssetId.Contains(AssetIdSearchText, StringComparison.OrdinalIgnoreCase)) &&
+                                     (string.IsNullOrEmpty(AssetStatusSearchText) || li.Status.Contains(AssetStatusSearchText, StringComparison.OrdinalIgnoreCase))).ToList();
+
+        IsGridViewFiltered = true;
+    }
+    protected void Delete_Click(string assetId)
+    {
+        assetTobeDeleted = assetId;
+        DeleteConfirmation.Show();
+    }
+
+    protected async Task ConfirmDelete_Click(bool deleteConfirmed)
+    {
+        if (deleteConfirmed)
+        {
+            await DeleteInterface(assetTobeDeleted);
+        }
+    }
+
+    public async Task DeleteInterface(string assetTobeDeleted)
+    {
+        //hideSpinner = false;
+            //var currentRow = configItems.Where(x => x.Id == assetTobeDeleted).First();
+            //await ConfigService.DeleteSystemsControlItemByIdAsync(currentRow);
+            //IsGridViewFiltered = true;
+            //configItems = await ConfigService.GetSystemControlAsync();
+            //filteredConfigItems = configItems;
+            //StateHasChanged();
+            //Navigation.NavigateTo("/systemcontrol");
+        //System.Threading.Thread.Sleep(20000);
+        //hideSpinner = true;
+    }
+}

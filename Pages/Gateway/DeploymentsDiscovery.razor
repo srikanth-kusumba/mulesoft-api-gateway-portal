@@ -1,0 +1,141 @@
+﻿@page "/deploymentsdiscovery"
+
+<PageTitle>Runtime Deployments</PageTitle>
+
+@*@attribute [Authorize(Roles = "mulesoft_admin")]*@
+
+@using ControlPlane.Data.GatewayModels;
+@using ControlPlane.Data.GatewayModels.Runtime;
+@using ControlPlane.IntegrationServices.AnyPointPlatform;
+
+@inject NavigationManager Navigation
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject PlatformAPIService PlatformAPIService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h5>Discover Deployments in Runtime Manager</h5>
+<hr />
+
+@if (filteredapiManagerAssets == null)
+{
+    <p><em>Loading...</em></p>
+    <div class="spinner-border"></div>
+}
+else
+{
+    <div class="table-responsive">
+        <GridView Items="filteredapiManagerAssets" ReloadList="@IsGridViewFiltered">
+            <GridColumns>
+                <GridColumn ColumnTitle="Deploymentt Id" HideSeachText=true></GridColumn>
+                <GridColumn ColumnTitle="Deployment Name" OnSearchTextChanged="@(e=>OnSearchTextChanged(e,"DeploymentName"))" ></GridColumn>
+                <GridColumn ColumnTitle="Target Id" HideSeachText=true></GridColumn>
+                <GridColumn ColumnTitle="Status" OnSearchTextChanged="@(e=>OnSearchTextChanged(e,"Status"))"></GridColumn>
+            </GridColumns>
+            <GridRow Context="deploymentItem">
+                <td style="text-align:center">
+                    @deploymentItem.id
+                </td>
+                <td style="text-align:center">
+                    <a href="updatedeployment/@deploymentItem.id">@deploymentItem.name</a>
+                </td>
+                <td style="text-align:center">
+                    <span class="d-inline-block text-truncate">
+                        @deploymentItem.target.targetId
+                    </span>
+                </td>
+                <td style="text-align:center">
+                    <span class="d-inline-block text-truncate">
+                        @deploymentItem.application.status
+                    </span>
+                </td>
+               @* <td>
+                    <button class="btn" @onclick="@(e=>Delete_Click(@deploymentItem.id))"><i class="oi oi-trash"></i></button>
+                </td>*@
+            </GridRow>
+        </GridView>
+        <ConfirmMsg @ref="DeleteConfirmation" ConfirmationChanged="ConfirmDelete_Click"
+                ConfirmationMessage=@($"Are you sure you want to delete this interface...?")>
+        </ConfirmMsg>
+
+    </div>
+}
+
+@code {
+    private RuntimeDeployments runtimeDeployments { get; set; }
+    private List<Item>? deploymentItems { get; set; }
+    private List<Item>? filteredapiManagerAssets { get; set; }
+    public bool IsGridViewFiltered { get; set; }
+    public string DeploymentNameSearchText { get; set; }
+    public string DeploymentStatusSearchText { get; set; }
+    private ConfirmBase DeleteConfirmation { get; set; }
+    private string assetTobeDeleted { get; set; }
+    protected string anypoint_token = "";
+    public string Status { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        anypoint_token = await sessionStorage.GetItemAsync<string>("anypoint_token");
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var anypointIdentity = authState.User.Identity.Name;
+
+        if (anypointIdentity != null)
+        {
+            runtimeDeployments = await PlatformAPIService.GetRunTimeDeployments(anypoint_token);
+            deploymentItems = runtimeDeployments.items;
+            filteredapiManagerAssets = deploymentItems;
+        }
+        else
+        {
+            Status = "Please login to AnyPoint";
+        }
+    }
+
+    private void OnSearchTextChanged(ChangeEventArgs changedEventArgs, string columnTitle)
+    {
+        string searchText = changedEventArgs.Value.ToString();
+
+        if (columnTitle == "DeploymentName")
+        {
+            DeploymentNameSearchText = searchText;
+        }
+        else if (columnTitle == "Status")
+        {
+            DeploymentStatusSearchText = searchText;
+        }
+
+        filteredapiManagerAssets = deploymentItems.Where(li => (string.IsNullOrEmpty(DeploymentNameSearchText) || li.name.Contains(DeploymentNameSearchText, StringComparison.OrdinalIgnoreCase)) &&
+                                     (string.IsNullOrEmpty(DeploymentStatusSearchText) || li.application.status.Contains(DeploymentStatusSearchText, StringComparison.OrdinalIgnoreCase))).ToList();
+
+        IsGridViewFiltered = true;
+    }
+
+
+    protected async void Delete_Click(string assetId)
+    {
+        assetTobeDeleted = assetId;
+        DeleteConfirmation.Show();
+    }
+
+    protected async Task ConfirmDelete_Click(bool deleteConfirmed)
+    {
+        if (deleteConfirmed)
+        {
+            await DeleteInterface(assetTobeDeleted);
+        }
+    }
+
+    public async Task DeleteInterface(string assetTobeDeleted)
+    {
+        //hideSpinner = false;
+            //var currentRow = configItems.Where(x => x.Id == assetTobeDeleted).First();
+            //await ConfigService.DeleteSystemsControlItemByIdAsync(currentRow);
+            //IsGridViewFiltered = true;
+            //configItems = await ConfigService.GetSystemControlAsync();
+            //filteredConfigItems = configItems;
+            //StateHasChanged();
+            //Navigation.NavigateTo("/systemcontrol");
+        //System.Threading.Thread.Sleep(20000);
+        //hideSpinner = true;
+    }
+}

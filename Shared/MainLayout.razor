@@ -1,0 +1,17 @@
+﻿@inherits LayoutComponentBase
+
+<div id="mySidebar" class="sidebar">
+    <NavMenu />
+</div>
+
+<div id="main" class="main">
+    <div class="top-row px-4">
+        <!-- BLAZOR COOKIE Auth Code (begin) -->
+        <LoginControl />
+        <!-- BLAZOR COOKIE Auth Code (end) -->
+    </div>
+
+    <div class="content px-4">
+        @Body
+    </div>
+</div>

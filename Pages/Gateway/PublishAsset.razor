@@ -1,0 +1,162 @@
+﻿@page "/publishasset"
+
+@using BlazorInputFile;
+@using ControlPlane.Data
+@using ControlPlane.Data.GatewayModels;
+@using ControlPlane.IntegrationServices.AnyPointPlatform;
+@using Newtonsoft.Json
+@using System.IO;
+
+@inject IJSRuntime jsRuntime
+@inject NavigationManager NavManager
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject PlatformAPIService PlatformAPIService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h5>Publish Asset to AnyPoint Exchange</h5>
+<hr />
+
+
+<EditForm Model="@exchangeModel">
+    <form>
+        <fieldset disabled>
+            <div class="form-group row">
+                <label class="col-sm-3 col-form-label">Organization/Business Group</label>
+                <div class="col-sm-4">
+                    <input type="text" class="form-control" value="Enterprise Integration" />
+                </div>
+            </div>
+        </fieldset>
+        <div class="form-group row">
+            <label class="col-sm-3 col-form-label">Asset Name</label>
+            <div class="col-sm-4">
+                <InputText class="form-control" @bind-Value="exchangeModel.AssetName" />
+                @*<input type="text" class="form-control" placeholder="asset name">*@
+                
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-3 col-form-label">Description</label>
+            <div class="col-sm-4">
+                <InputText class="form-control" @bind-Value="exchangeModel.Description" />
+                @*<input type="text" class="form-control" placeholder="description of the asset">*@
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-3 col-form-label">Asset Version</label>
+            <div class="col-sm-4">
+                <InputText class="form-control" @bind-Value="exchangeModel.AssetVersion" />
+                <small class="form-text text-muted">asset version format: 1.0.0</small>
+            </div>
+        </div>
+
+    </form>
+    <form method="post" enctype="multipart/form-data">
+        <div class="form-group row">
+            <label class="col-sm-3 col-form-label">Upload API Specification [OAS/Swagger] File</label>
+            <div class="col-sm-4">
+                <BlazorInputFile.InputFile OnChange="HandleSelection" placeholder="" />
+            </div>
+        </div>
+
+    </form>
+    <div class="form-group row">
+        <label class="col-sm-3 col-form-label">API Version</label>
+        <div class="col-sm-4">
+            <InputText class="form-control" @bind-Value="exchangeModel.PropertiesAPIVersion" />
+            <small class="form-text text-muted">API version format: v1</small>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-sm-3 w-25">
+            <button type="submit" @onclick="Publish" class="btn btn-primary">Publish</button>
+        </div>
+        <div class="col-sm-4 w-50">
+            <div class="fa-left fas fa-sync-alt spinning w-50" hidden="@spinHidden">
+                Processing...<div class="spinner-border"></div>
+            </div>
+        </div>
+    </div>
+    <div class="form-group row" hidden="@boolHideDiv">
+        <label for="inputStatus" class="col-sm-2 col-form-label w-25">Status</label>
+        <div class="col-sm-8 w-75">
+            <label class="col-sm-10 col-form-label font-weight-bold">@Status</label>
+        </div>
+    </div>
+
+</EditForm>
+
+@code {
+
+    string SerializedString = null;
+    byte[] filecontentBytes = null;
+    string filename = "";
+    string fileKey = "";
+
+    private bool boolHideDiv { get; set; } = true;
+    private string Status { get; set; }
+    private bool IsSearching { get; set; }
+    private string ErrorMessage { get; set; }
+    bool spinHidden = true;
+
+    public ExchangeAssetRequest exchangeModel { get; set; }
+
+    protected string anypoint_token = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+    }
+    protected override async Task OnParametersSetAsync()
+    {
+        exchangeModel = new ExchangeAssetRequest();
+        anypoint_token = await sessionStorage.GetItemAsync<string>("anypoint_token");
+    }
+
+    protected async Task HandleSelection(IFileListEntry[] files)
+    {
+        var file = files.FirstOrDefault();
+        fileKey = "";
+
+        if (file != null)
+        {
+            using (MemoryStream ms = new MemoryStream())
+            {
+                await file.Data.CopyToAsync(ms);
+                filecontentBytes = ms.ToArray();
+
+                exchangeModel.OASFileBytes = filecontentBytes;
+                exchangeModel.OASFileName = file.Name;
+                exchangeModel.PropertiesMainFile = file.Name;
+            }
+            Status = $"Finished loading {file.Size} bytes from {file.Name}";
+            StateHasChanged();
+        }
+    }
+
+    protected async void Publish()
+    {
+        ErrorMessage = "";
+        boolHideDiv = true;
+        IsSearching = true;
+        spinHidden = false;
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var anypointIdentity = authState.User.Identity.Name;
+
+        if (anypointIdentity != null)
+        {
+            var response = await PlatformAPIService.PublishAssetToExchange(exchangeModel, anypoint_token);
+            Status = "Asset " + response.Name + " is created with version " + response.Version;
+        }
+        else
+        {
+            Status = "Please login to AnyPoint to publish an asset";
+        }
+
+        boolHideDiv = false;
+        IsSearching = false;
+        spinHidden = true;
+
+        StateHasChanged();
+    }
+}

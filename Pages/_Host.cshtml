@@ -1,0 +1,89 @@
+﻿@page "/"
+@namespace ControlPlane.Pages
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+@{
+    Layout = null;
+    //Response.Headers["Cache-Control"] = "no-store";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="css/swagger-ui.css" rel="stylesheet" />
+    <link href="css/swagger-editor.css" rel="stylesheet" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MuleSoft Universal API Gateway</title>
+    <base href="~/" />
+    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
+    <link href="css/site.css" rel="stylesheet" />
+    <link href="https://cdn.syncfusion.com/ej2/material.css" rel="stylesheet" />
+    
+    <script src="~/js/clickAndPositionHandler.js"></script>
+    <link rel="stylesheet" href="~/css/daterangepicker.min.css"/>
+
+</head>
+<body>
+    <app>
+        @*<component type="typeof(App)" render-mode="ServerPrerendered" />*@
+        <component type="typeof(App)" render-mode="Server" />
+        @*rendermode for Session storage*@
+    </app>
+
+    <div id="blazor-error-ui">
+        <environment include="Staging,Production">
+            An error has occurred. This application may no longer respond until reloaded.
+        </environment>
+        <environment include="Development">
+            An unhandled exception has occurred. See browser dev tools for details.
+        </environment>
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+
+    <script src="js/swagger-local.js"></script>
+    <script src="js/swagger-ui-bundle.js"></script>
+    <script src="js/swagger-ui-standalone-preset.js"></script>
+    <script src="js/swagger-editor-bundle.js"></script>
+    <script src="js/swagger-editor-standalone-preset.js"></script>
+
+    @*Collapsible sidebar*@
+    <script src="~/js/collapsible-sidebar.js"></script>
+
+    <script src="_framework/blazor.server.js"></script>
+
+    <script src="~/_content/BlazorInputFile/inputfile.js"></script>
+    <script src="js/jquery-3.5.1.min.js"></script>
+    <script src="js/bootstrap.bundle.min.js"></script>
+
+    @*ChartJs.Fork*@
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+
+    <!-- This is the glue between Blazor and Chart.js -->
+    <script src="_content/ChartJs.Blazor.Fork/ChartJsBlazorInterop.js"></script>
+    @*ChartJs.Fork*@
+
+    <script>
+        ResizeTextArea = function (id) {
+            var el = document.getElementById(id);
+            if (el) {
+                el.style.height = "5px";
+                el.style.height = (el.scrollHeight + 5) + "px";
+            }
+            return true;
+        }
+    </script>
+    
+    <script>
+        showToolTip = function () {
+            $(document).ready(function () {
+                $('[data-toggle="tooltip"]').tooltip();
+            });
+            return true;
+        }
+    </script>
+
+</body>
+</html>
+

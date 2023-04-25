@@ -1,0 +1,70 @@
+<div class="modal fade show d-block" id="exampleModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+         <div class="modal-header">
+            <h4 class="modal-title">@Caption</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"
+               @onclick="@Cancel">&times;</button>
+         </div>
+         <div class="modal-body">
+            <p>@Message</p>
+                <p class="card-text">
+                    *Reason: <input type="text"  @bind-value="Comment"  ValueExpression="() => Comment" />
+                </p>
+         </div>
+         <div class="modal-footer">
+            @switch (Type)
+            {
+               case Category.Okay:
+                  <button type="button" class="btn btn-primary"
+                          @onclick=@Ok>OK</button>
+                  break;
+               case Category.Add:
+               case Category.Edit:
+               case Category.Delete:
+                  <button type="button" class="btn btn-danger"
+                     @onclick=@Ok>Confirm</button>
+                  <button type="button" class="btn btn-warning"
+                     @onclick="@Cancel">Cancel</button>
+                  break;
+            }
+         </div>
+      </div>
+   </div>
+</div>
+@code {
+   [Parameter] public string Caption { get; set; }
+   [Parameter] public string Message { get; set; }
+   [Parameter] public EventCallback<ConfirmDto> OnClose { get; set; }
+   [Parameter] public Category Type { get; set; }
+   [Parameter] public string Comment { get; set; } = String.Empty;
+   [Parameter] public string ErrorMsg { get; set; }
+   public bool IsDisable {get; set;} = true;
+private Task Cancel()
+   {
+      return OnClose.InvokeAsync(new ConfirmDto(){
+        Confirm = false, Reason = ""
+      });
+   }
+    private Task Ok()
+    {
+        return OnClose.InvokeAsync(new ConfirmDto(){
+            Confirm = true, Reason = Comment
+        });
+        
+    }
+
+    protected void CommentAdded(string comment)
+    {
+        
+        Comment = comment;
+        
+    }
+    public enum Category
+   {
+       Okay,
+       Add,
+       Edit,
+       Delete
+   }
+}

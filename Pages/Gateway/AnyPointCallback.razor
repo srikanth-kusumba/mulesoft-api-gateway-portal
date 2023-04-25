@@ -1,0 +1,68 @@
+﻿@*
+        Implemented by srikanth.kusumba 
+        AnyPoint Platform Integration
+*@
+
+@page "/anypointcallback"
+
+@using ControlPlane.Data
+@using ControlPlane.Data.GatewayModels;
+@using ControlPlane.IntegrationServices.AnyPointPlatform
+@using NLog
+
+@inject PlatformAPIService anypointService
+@inject NavigationManager NavManager
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h5 class="text-info">AnyPoint</h5>
+<p><em>Validating AnyPoint Credentials</em></p>
+<div class="spinner-border"></div>
+
+@code
+{
+    private bool boolHideDiv { get; set; }
+    private AnyPointTokenResponse TokenObject { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        NLog.ILogger logger;
+        logger = LogManager.GetCurrentClassLogger();
+
+        boolHideDiv = true;
+        var uri = NavManager.Uri;
+
+        var parameters = uri.Split('?');
+
+        if (uri.ToLower().Contains("code="))
+        {
+            try
+            {
+                var codeQuery = parameters[1].Split('=');
+                var code = codeQuery[1];
+
+                TokenObject = await anypointService.GetAccessToken(code);
+
+                if (TokenObject != null && TokenObject.access_token !=null && !TokenObject.access_token.Contains("EXCEPTION"))
+                {
+                    await sessionStorage.SetItemAsync("anypoint_token", TokenObject.access_token);
+                    await sessionStorage.SetItemAsync("anypoint_id", "ConnectedApp");
+                    ((ControlPlane.Data.CustomAuthStateProvider)AuthenticationStateProvider).MarkUserAsAuthenticatedInAnyPoint();
+                    NavManager.NavigateTo("/assetdiscovery");
+                }
+                else
+                {
+                    logger.Error("Null Token");
+                    NavManager.NavigateTo("/customerror/" + "Null Token");
+                }
+            }
+            catch(Exception ex)
+            {
+                NavManager.NavigateTo("/customerror/"+ ex.Message);
+                logger.Error("Exception in Callback Razor: " + ex.Message);
+            }
+        }
+    }
+
+}

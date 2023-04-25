@@ -1,0 +1,18 @@
+﻿@page "/about"
+@page "/about/{topic}"
+
+<h4><span style="color:#0171AD">@Topic Steps</span></h4>
+
+<div class="wrapper container-fluid">
+    <div style="margin-top:30px"></div>
+        <p>&nbsp;As a first time user, you will have limited site permissions. </p>
+        <p> &nbsp;In order to access many of the site’s functions, you will need to Login and submit a request for the appropriate role. </p>
+        <p> &nbsp;You can do this by clicking on <a href="role"> Role Subscription </a> &nbsp;and select the role(s) you need: Portal Admin, Publisher, or Subscriber.</p>
+        <p> &nbsp;Once you submit your request, please wait for the Portal Admin to review and approve your request</p>
+</div>
+
+@code
+{
+    [Parameter]
+    public string Topic { get; set; } = "Onboarding";
+}

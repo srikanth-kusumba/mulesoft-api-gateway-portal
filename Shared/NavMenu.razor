@@ -1,0 +1,115 @@
+﻿@inject IJSRuntime jsRuntime
+
+
+<div class="top-row pl-4 navbar navbar-dark">
+    @*<a id="btnCollapse" class="oi oi-collapse-left"></a>*@
+    <a class="navbar-brand" href=""><img style="height:32px;width:32px" src="/images/mule_logo.png" /> MuleSoft API Gateway Portal</a>
+    <button class="navbar-toggler" @onclick="ToggleNavMenu">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+</div>
+<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
+    
+    <ul class="nav flex-column">
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="oi oi-home" aria-hidden="true"></span> Home
+            </NavLink>
+        </li>
+
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="assetdiscovery" @onclick="@(e=>ManageExpandMenu("Gateway"))" Match="NavLinkMatch.All">
+                <span class="oi oi-audio-spectrum" aria-hidden="true"></span> Gateway
+            </NavLink>
+            @if (gatewayExpandMenu)
+            {
+                <ul class="nav flex-column">
+
+                    <li class="nav-item px-3">
+                        <NavLink class="nav-link" href="assetdiscovery" Match="NavLinkMatch.All">
+                            <span class="oi oi-list" aria-hidden="true"></span> Asset Discovery
+                        </NavLink>
+                    </li>
+                    <li class="nav-item px-3">
+                        <NavLink class="nav-link" href="publishasset" Match="NavLinkMatch.All">
+                            <span class="oi oi-cloud-upload" aria-hidden="true"></span> 1.Publish Exchange Asset
+                        </NavLink>
+                    </li>
+                    <li class="nav-item px-3">
+                        <NavLink class="nav-link" href="createapi" Match="NavLinkMatch.All">
+                            <span class="oi oi-task" aria-hidden="true"></span> 2.Create API Proxy
+                        </NavLink>
+                    </li>
+                    <li class="nav-item px-3">
+                        <NavLink class="nav-link" href="apidiscovery" Match="NavLinkMatch.All">
+                            <span class="oi oi-list-rich" aria-hidden="true"></span> 3.API Discovery
+                        </NavLink>
+                    </li>
+                    <li class="nav-item px-3">
+                        <NavLink class="nav-link" href="applications" Match="NavLinkMatch.All">
+                            <span class="oi oi-globe" aria-hidden="true"></span> 4.Applications
+                        </NavLink>
+                    </li>
+                    <li class="nav-item px-3">
+                        <NavLink class="nav-link" href="createcontract" Match="NavLinkMatch.All">
+                            <span class="oi oi-resize-width" aria-hidden="true"></span> 5.API contracts
+                        </NavLink>
+                    </li>
+                    <li class="nv-item px-3">
+                        <NavLink class="nav-link" href="deploymentsdiscovery" Match="NavLinkMatch.All">
+                            <span class="oi oi-terminal" aria-hidden="true"></span>Deployments
+                        </NavLink>
+                    </li>
+                </ul>
+            }
+        </li>
+    </ul>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private bool gatewayExpandMenu = true;
+    private bool groupsExpandMenu;
+    
+    private bool updateExpandMenu;
+
+    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await jsRuntime.InvokeVoidAsync("registerCollapseSidebar", "dummy");
+        }
+    }
+
+    [Inject] IJSRuntime JSRuntime { get; set; }
+    protected async Task CloseSidebar()
+    {
+        await JSRuntime.InvokeVoidAsync("sidebarFunctions.collapseNav", "dummy");
+    }
+
+    private void ManageExpandMenu(string currentNavlink)
+    {
+
+       if (currentNavlink == "Gateway")
+        {
+            gatewayExpandMenu = !gatewayExpandMenu;
+            groupsExpandMenu = false;
+            updateExpandMenu = false;
+        }
+
+    }
+
+    public async Task NavigateToNewTab()
+    {
+        string url = "/swaggereditor";
+        await jsRuntime.InvokeAsync<object>("open", url, "_blank");
+    }
+}

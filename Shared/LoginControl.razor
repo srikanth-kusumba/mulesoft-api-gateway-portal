@@ -1,0 +1,47 @@
+﻿@*
+    Implemented by srikanth.kusumba
+    MuleSoft Control Plane  => Login and Logout UI
+*@
+
+@page "/loginControl"
+@using System.Web;
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavManager
+
+<AuthorizeView>
+    <Authorized>
+        <b>Hello, @context.User.Identity.Name</b>
+        <label class="ml-md-auto"><b>(@Startup.Tool_Environment)</b></label>
+        <button class="ml-md-auto btn btn-primary" @onclick="LogoutUser">Logout</button>
+    </Authorized>
+    <NotAuthorized>
+        <b>Please login to AnyPoint Platform</b>
+        <button class="ml-md-auto btn btn-primary" @onclick="RedirectUser">AnyPoint Sign in </button>
+    </NotAuthorized>
+    <Authorizing>
+        <p><em>Loading...</em></p>
+        <div class="spinner-border"></div>
+    </Authorizing>
+</AuthorizeView>
+
+@code {
+    string Username = "";
+    string Password = "";
+    private string encode(string param)
+    {
+        return HttpUtility.UrlEncode(param);
+    }
+    
+    private async Task<bool> RedirectUser()
+    {
+        NavManager.NavigateTo(Startup.AnyPoint_Authorization_Endpoint);
+        return await Task.FromResult(true);
+    }
+
+    private async Task<bool> LogoutUser()
+    {
+        ((ControlPlane.Data.CustomAuthStateProvider)AuthenticationStateProvider).MarkUserAsLoggedOut();
+        return await Task.FromResult(true);
+    }
+}

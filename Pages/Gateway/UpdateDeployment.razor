@@ -1,0 +1,168 @@
+﻿@page "/updatedeployment"
+@page "/updatedeployment/{DeploymentId}"
+
+@using BlazorInputFile;
+@using ControlPlane.Data.GatewayModels;
+@using ControlPlane.Data.GatewayModels.Runtime;
+@using ControlPlane.IntegrationServices.AnyPointPlatform;
+@using Newtonsoft.Json
+@using System.IO;
+
+@inject IJSRuntime jsRuntime
+@inject NavigationManager NavManager
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject PlatformAPIService PlatformAPIService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h5>Update an existing Deployment in Runtime Manager</h5>
+<hr />
+
+@if (patchDeploymentModel != null)
+{
+    <EditForm Model="@patchDeploymentModel">
+        <form>
+            <fieldset disabled>
+                <div class="form-group row">
+                    <label class="col-sm-3 col-form-label">Organization/Business Group</label>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" value="Enterprise Integration" />
+                    </div>
+                </div>
+            </fieldset>
+
+            <div class="form-group row">
+                <label class="col-sm-3 col-form-label">Deployment Id</label>
+                <div class="col-sm-4">
+                    <label class="form-control" readonly>@patchDeploymentModel.id</label>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-sm-3 col-form-label">Deployment Name</label>
+                <div class="col-sm-4">
+                    <label class="form-control" readonly>@patchDeploymentModel.name</label>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-sm-3 col-form-label">Deployment public url</label>
+                <div class="col-sm-4">
+                    <InputTextArea rows="5"  class="form-control" @bind-Value="patchDeploymentModel.target.deploymentSettings.http.inbound.publicUrl" />
+                    <small class="form-text text-muted">change or update the ingress url. if you have multiple, endter with comma separated</small>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-sm-3 col-form-label">Update Strategy</label>
+                <div class="col-sm-4">
+                    <InputText class="form-control" @bind-Value="patchDeploymentModel.target.deploymentSettings.updateStrategy" />
+                    <small class="form-text text-muted">use rolling update strategy for production and recreate for non-prod</small>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-sm-3 col-form-label">Replicas</label>
+                <div class="col-sm-4">
+                    <InputText class="form-control" @bind-Value="replicaCount" />
+                    <small class="form-text text-muted">use 1 for create strategy and 2 for rolling update (only for prod)</small>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-sm-3 col-form-label">Reserved CPU</label>
+                <div class="col-sm-4">
+                    <InputText class="form-control" @bind-Value="patchDeploymentModel.target.deploymentSettings.cpuReserved" />
+                    <small class="form-text text-muted">cpu reserved set the default value of 200m unless required</small>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-sm-3 col-form-label">CPU Limit</label>
+                <div class="col-sm-4">
+                    <InputText class="form-control" @bind-Value="patchDeploymentModel.target.deploymentSettings.cpuMax" />
+                    <small class="form-text text-muted">max limit is 1000m</small>
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-sm-3 col-form-label">Memory</label>
+                <div class="col-sm-4">
+                    <InputText class="form-control" @bind-Value="patchDeploymentModel.target.deploymentSettings.memoryReserved" />
+                    <small class="form-text text-muted">Default 1000Mi</small>
+                </div>
+            </div>
+        </form>
+
+        <div class="form-group row">
+            <div class="col-sm-3 w-25">
+                <button type="submit" @onclick="UpdateIngress" class="btn btn-primary">Update Ingress</button>
+            </div>
+            <div class="col-sm-4 w-50">
+                <div class="fa-left fas fa-sync-alt spinning w-50" hidden="@spinHidden">
+                    Processing...<div class="spinner-border"></div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group row" hidden="@boolHideDiv">
+            <label for="inputStatus" class="col-sm-2 col-form-label w-25">Status</label>
+            <div class="col-sm-8 w-75">
+                <label class="col-sm-10 col-form-label font-weight-bold">@Status</label>
+            </div>
+        </div>
+
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public string DeploymentId { get; set; } = "";
+
+    string SerializedString = null;
+    byte[] filecontentBytes = null;
+    string filename = "";
+    string fileKey = "";
+
+    private bool boolHideDiv { get; set; } = true;
+    private string Status { get; set; }
+    private bool IsSearching { get; set; }
+    private string ErrorMessage { get; set; }
+    bool spinHidden = true;
+    private string replicaCount { get; set; } = "1";
+
+    public PatchDeployment patchDeploymentModel { get; set; }
+    public RuntimeDeployments runtimeDeployment { get; set; }
+
+    protected string anypoint_token = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        anypoint_token = await sessionStorage.GetItemAsync<string>("anypoint_token");
+
+        if (!string.IsNullOrEmpty(DeploymentId))
+        {
+            patchDeploymentModel = await PlatformAPIService.GetRunTimeDeploymentById(anypoint_token, DeploymentId);
+        }
+
+    }
+
+    protected async void UpdateIngress()
+    {
+        ErrorMessage = "";
+        boolHideDiv = true;
+        IsSearching = true;
+        spinHidden = false;
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var anypointIdentity = authState.User.Identity.Name;
+
+        if (anypointIdentity != null)
+        {
+            patchDeploymentModel.target.replicas = Convert.ToInt16(replicaCount);
+            var response = await PlatformAPIService.UpdateIngress(patchDeploymentModel, anypoint_token);
+            Status = "Deployment updated with the given ingress";
+        }
+        else
+        {
+            Status = "Please login to AnyPoint to publish an asset";
+        }
+
+        boolHideDiv = false;
+        IsSearching = false;
+        spinHidden = true;
+
+        StateHasChanged();
+    }
+}

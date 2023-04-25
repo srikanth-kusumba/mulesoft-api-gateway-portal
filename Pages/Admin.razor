@@ -1,0 +1,76 @@
+﻿@page "/admin"
+@page "/admin/api"
+@page "/admin/apps"
+
+@attribute [Authorize(Roles = "PortalAdmin")]
+
+@using ControlPlane.Data
+@inject APIManagementService apiService
+
+<h4><span style="color:#0171AD">Manage APPs (Apps Products and Proxies)</span></h4>
+
+
+@if (appObject == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="form-group row">
+        <label for="inputAPIName" class="col-sm-2 col-form-label">API Name: @appObject.Name</label>
+    </div>
+
+    <table class="table" style="vertical-align:middle">
+        <thead>
+            <tr style="vertical-align:middle">
+                <th style="color:#0171AD" width="120px">Product Name</th>
+                <th style="color:#0171AD" width="80px">Proxy</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in appObject.Products)
+            {
+                <tr style="vertical-align:middle">
+                    <td style="color:#0171AD" valign="middle">
+                        @product.Name
+                    </td>
+                    <td>
+                        @foreach (var proxy in product.Proxies)
+                        {
+                            <table>
+                                <thead>
+                                    <tr style="vertical-align:middle">
+                                        <th style="color:#0171AD" width="120px">Name</th>
+                                        <th style="color:#0171AD" width="80px">Stage</th>
+                                        <th style="color:#0171AD" width="80px">Method</th>
+                                        <th style="color:#0171AD" width="200px">URI</th>
+                                    </tr>
+                                </thead>
+                                <tr>
+                                    <td><label>@proxy.Name</label></td>
+                                    <td><label>@proxy.Stage</label></td>
+                                    <td><label>@proxy.HttpMethod</label></td>
+                                    <td><label>@proxy.URI</label></td>
+                                </tr>
+                            </table>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+
+@code
+{
+    private bool boolHideDiv { get; set; }
+
+    private APP appObject;
+
+    protected override async Task OnInitializedAsync()
+    {
+        boolHideDiv = true;
+        appObject = await apiService.LoadAppFromJSON();
+    }
+}

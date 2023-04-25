@@ -1,0 +1,159 @@
+﻿@page "/apidiscovery"
+
+<PageTitle>API Manager APIs</PageTitle>
+
+@*@attribute [Authorize(Roles = "mulesoft_admin")]*@
+
+@using ControlPlane.Data.GatewayModels;
+@using ControlPlane.IntegrationServices.AnyPointPlatform;
+
+@inject NavigationManager Navigation
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject PlatformAPIService PlatformAPIService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h5>Discover API Manager Assets</h5>
+<hr />
+
+@if (filteredapiManagerAssets == null)
+{
+    <p><em>Loading...</em></p>
+    <div class="spinner-border"></div>
+}
+else
+{
+    <div class="table-responsive">
+        <GridView Items="filteredapiManagerAssets" ReloadList="@IsGridViewFiltered">
+            <GridColumns>
+                <GridColumn ColumnTitle="Asset Id" OnSearchTextChanged="@(e=>OnSearchTextChanged(e,"AssetId"))"></GridColumn>
+                <GridColumn ColumnTitle="API Id" OnSearchTextChanged="@(e=>OnSearchTextChanged(e,"APIId"))"></GridColumn>
+                <GridColumn ColumnTitle="Exchange Asset Name" HideSeachText=true></GridColumn>
+                <GridColumn ColumnTitle="Total APIs" HideSeachText=true></GridColumn>
+                <GridColumn ColumnTitle="Status" OnSearchTextChanged="@(e=>OnSearchTextChanged(e,"Status"))"></GridColumn>
+                <GridColumn ColumnTitle="Deploy" HideSeachText=true></GridColumn>
+                <GridColumn ColumnTitle="Delete" HideSeachText=true></GridColumn>
+            </GridColumns>
+            <GridRow Context="asset">
+                <td style="text-align:center">
+                    @asset.AssetId
+                </td>
+                 <td style="text-align:center">
+                     <a href="deployapi/@asset.AssetId">@asset.Apis[0].Id</a>
+                </td>
+                <td style="text-align:center">
+                    <span class="d-inline-block text-truncate">
+                        @asset.ExchangeAssetName
+                    </span>
+                </td>
+                <td style="text-align:center">
+                    <span class="d-inline-block text-truncate">
+                        @asset.TotalApis.ToString()
+                    </span>
+                </td>
+                <td style="text-align:center">
+                    <span class="d-inline-block text-truncate">
+                        @asset.Apis[0].Status
+                    </span>
+                </td>
+                <td>                  
+                   @* @if ((asset.Apis[0].Status.ToLower() == "unregistered"))*@
+                    @*{*@
+                        <button class="btn" @onclick="@(e=>Deploy_Click(@asset.AssetId))">Deploy</button>
+                    @*}*@
+                </td>
+                <td>                    
+                    <button class="btn" @onclick="@(e=>Delete_Click(@asset.AssetId))"><i class="oi oi-trash"></i></button>
+                </td>
+            </GridRow>
+        </GridView>
+        <ConfirmMsg @ref="DeleteConfirmation" ConfirmationChanged="ConfirmDelete_Click"
+                ConfirmationMessage=@($"Are you sure you want to delete this interface...?")>
+        </ConfirmMsg>
+
+    </div>
+}
+
+@code {
+    private APIManagerAPIs apiManagerAPIsObject { get; set; }
+    private List<Asset>? apiManagerAssets { get; set; }
+    private List<Asset>? filteredapiManagerAssets { get; set; }
+    public bool IsGridViewFiltered { get; set; }
+    public string AssetIdSearchText { get; set; }
+    public string AssetStatusSearchText { get; set; }
+    private ConfirmBase DeleteConfirmation { get; set; }
+    private string assetTobeDeleted { get; set; }
+    protected string anypoint_token = "";
+    public string Status { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        anypoint_token = await sessionStorage.GetItemAsync<string>("anypoint_token");
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var anypointIdentity = authState.User.Identity.Name;
+
+        if (anypointIdentity != null)
+        {
+            apiManagerAPIsObject = await PlatformAPIService.GetAPIManagerAssetsAsync(anypoint_token);
+            apiManagerAssets = apiManagerAPIsObject.Assets.Where(x=>x.TotalApis>0).ToList();
+            filteredapiManagerAssets = apiManagerAssets;
+        }
+        else
+        {
+            Status = "Please login to AnyPoint to publish an asset";
+        }
+    }
+
+    private void OnSearchTextChanged(ChangeEventArgs changedEventArgs, string columnTitle)
+    {
+        string searchText = changedEventArgs.Value.ToString();
+
+        if (columnTitle == "AssetId")
+        {
+            AssetIdSearchText = searchText;
+        }
+        else if (columnTitle == "Status")
+        {
+            AssetStatusSearchText = searchText;
+        }
+
+        filteredapiManagerAssets = apiManagerAssets.Where(li => (string.IsNullOrEmpty(AssetIdSearchText) || li.AssetId.Contains(AssetIdSearchText, StringComparison.OrdinalIgnoreCase)) &&
+                                     (string.IsNullOrEmpty(AssetStatusSearchText) || li.Apis[0].Status.Contains(AssetStatusSearchText, StringComparison.OrdinalIgnoreCase))).ToList();
+
+        IsGridViewFiltered = true;
+    }
+
+    protected async void Deploy_Click(string assetId)
+    {
+        var currentAsset = apiManagerAssets.Where(x => x.AssetId == assetId).First();
+        await PlatformAPIService.DeployAPIManagerAPI(currentAsset.Apis[0].Id.ToString(), currentAsset.Apis[0].InstanceLabel, anypoint_token);
+    }
+
+    protected async void Delete_Click(string assetId)
+    {
+        assetTobeDeleted = assetId;
+        DeleteConfirmation.Show();
+    }
+
+    protected async Task ConfirmDelete_Click(bool deleteConfirmed)
+    {
+        if (deleteConfirmed)
+        {
+            await DeleteInterface(assetTobeDeleted);
+        }
+    }
+
+    public async Task DeleteInterface(string assetTobeDeleted)
+    {
+        //hideSpinner = false;
+            //var currentRow = configItems.Where(x => x.Id == assetTobeDeleted).First();
+            //await ConfigService.DeleteSystemsControlItemByIdAsync(currentRow);
+            //IsGridViewFiltered = true;
+            //configItems = await ConfigService.GetSystemControlAsync();
+            //filteredConfigItems = configItems;
+            //StateHasChanged();
+            //Navigation.NavigateTo("/systemcontrol");
+        //System.Threading.Thread.Sleep(20000);
+        //hideSpinner = true;
+    }
+}

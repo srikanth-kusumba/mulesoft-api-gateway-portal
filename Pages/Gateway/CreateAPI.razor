@@ -1,0 +1,152 @@
+﻿@page "/createapi"
+@page "/createapi/asset/{AssetId}/version/{Version}"
+
+@using BlazorInputFile;
+@using ControlPlane.Data.GatewayModels;
+@using ControlPlane.IntegrationServices.AnyPointPlatform;
+@using Newtonsoft.Json
+@using System.IO;
+
+@inject IJSRuntime jsRuntime
+@inject NavigationManager NavManager
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+@inject PlatformAPIService PlatformAPIService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h5>Create an API from Exchange Asset</h5>
+<hr />
+
+
+<EditForm Model="@apiManagerModel">
+    <form>
+        <fieldset disabled>
+            <div class="form-group row">
+                <label class="col-sm-3 col-form-label">Organization/Business Group</label>
+                <div class="col-sm-4">
+                    <input type="text" class="form-control" value="Enterprise Integration" />
+                </div>
+            </div>
+        </fieldset>
+        
+        <div class="form-group row">
+            <label class="col-sm-3 col-form-label">Exchange Asset Id </label>
+            <div class="col-sm-4">
+                <InputText class="form-control" @bind-Value="apiManagerModel.Spec.AssetId" />
+                @*<input type="text" class="form-control" placeholder="description of the asset">*@
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-3 col-form-label">Exchange Asset Version</label>
+            <div class="col-sm-4">
+                <InputText class="form-control" @bind-Value="apiManagerModel.Spec.Version" />
+                <small class="form-text text-muted">asset version format: 1.0.0</small>
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label class="col-sm-3 col-form-label">API Instance Label</label>
+            <div class="col-sm-4">
+            <InputText class="form-control" @bind-Value="apiManagerModel.InstanceLabel" />
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-3 col-form-label">Target Endpoint uri</label>
+            <div class="col-sm-4">
+                <InputText class="form-control" @bind-Value="apiManagerModel.Endpoint.Uri" />
+                <small class="form-text text-muted">endpoint uri from OAS/Swagger specification document (format: https://petstore.swagger.io/v2)</small>
+            </div>
+        </div>
+
+    </form>
+    
+    <div class="form-group row">
+        <div class="col-sm-3 w-25">
+            <button type="submit" @onclick="CreateAPIManagerProxyAPI" class="btn btn-primary">Create API</button>
+        </div>
+        <div class="col-sm-4 w-50">
+            <div class="fa-left fas fa-sync-alt spinning w-50" hidden="@spinHidden">
+                Processing...<div class="spinner-border"></div>
+            </div>
+        </div>
+    </div>
+    <div class="form-group row" hidden="@boolHideDiv">
+        <label for="inputStatus" class="col-sm-2 col-form-label w-25">Status</label>
+        <div class="col-sm-8 w-75">
+            <label class="col-sm-10 col-form-label font-weight-bold">@Status</label>
+        </div>
+    </div>
+
+</EditForm>
+
+@code {
+    [Parameter]
+    public string AssetId { get; set; } = "";
+    [Parameter]
+    public string Version { get; set; } = "";
+
+    string SerializedString = null;
+    byte[] filecontentBytes = null;
+    string filename = "";
+    string fileKey = "";
+
+    private bool boolHideDiv { get; set; } = true;
+    private string Status { get; set; }
+    private bool IsSearching { get; set; }
+    private string ErrorMessage { get; set; }
+    bool spinHidden = true;
+
+    //public CreateAPIRequest apiManagerModel { get; set; }
+    public CreateAPIProxyRequest apiManagerModel { get; set; }
+
+    protected string anypoint_token = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        apiManagerModel = new CreateAPIProxyRequest();
+        apiManagerModel.InstanceLabel = this.AssetId;
+        apiManagerModel.Endpoint = new Endpoint();
+        apiManagerModel.Tags = new string[] { "internal", "created from UAPIM" };
+        apiManagerModel.Spec = new();
+        apiManagerModel.Spec.Version = this.Version;
+        apiManagerModel.Deployment = new ProxyDeployment();
+        apiManagerModel.Deployment.Target = new ProxyTarget();
+        apiManagerModel.Deployment.Target.DeploymentSettings = new ProxyDeploymentSettings();
+
+        if (!string.IsNullOrEmpty(AssetId))
+        {
+            apiManagerModel.InstanceLabel = AssetId;
+            apiManagerModel.Spec.AssetId = AssetId;
+        }
+        apiManagerModel.Endpoint.ProxyTemplate = new ProxyTemplate();
+        anypoint_token = await sessionStorage.GetItemAsync<string>("anypoint_token");
+    }
+
+
+    protected async void CreateAPIManagerProxyAPI()
+    {
+        ErrorMessage = "";
+        boolHideDiv = true;
+        IsSearching = true;
+        spinHidden = false;
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var anypointIdentity = authState.User.Identity.Name;
+
+        if (anypointIdentity != null)
+        {
+            //var response = await PlatformAPIService.CreateAPIManagerAPI(apiManagerModel, anypoint_token);
+            var response = await PlatformAPIService.CreateAPIManagerProxy(apiManagerModel, anypoint_token);
+            Status = "Proxy " + response.InstanceLabel + " is created and Deployed ";
+        }
+        else
+        {
+            Status = "Please login to AnyPoint to publish an asset";
+        }
+
+        boolHideDiv = false;
+        IsSearching = false;
+        spinHidden = true;
+
+        StateHasChanged();
+    }
+}

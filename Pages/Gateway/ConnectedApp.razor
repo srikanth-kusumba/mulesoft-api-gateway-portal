@@ -1,0 +1,34 @@
+﻿@page "/connectedapp"
+
+@using ControlPlane.Data
+@using Newtonsoft.Json
+
+@inject IJSRuntime jsRuntime
+@inject NavigationManager NavManager
+@inject Blazored.SessionStorage.ISessionStorageService sessionStorage
+
+<hr />
+<h5>ConnectedApp @token</h5>
+<hr />
+@*<b>Please login to anypoint to perform Universal API management tasks (@Startup.Tool_Environment) </b>
+<button class="ml-md-auto btn btn-primary" @onclick="RedirectUser">Sign in with AnyPoint</button>
+
+@code {
+    private async Task<bool> RedirectUser()
+    {
+        NavManager.NavigateTo(Startup.AnyPoint_Authorization_Endpoint);
+        return await Task.FromResult(true);
+    }
+}
+*@
+
+
+@code {
+
+    protected string token = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        token = await sessionStorage.GetItemAsync<string>("anypoint_token");
+    }
+}

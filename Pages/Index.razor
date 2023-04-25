@@ -1,0 +1,58 @@
+﻿@page "/"
+
+<AuthorizeView>
+    <Authorized>
+        @*<p> You are successfully signedIn to Anypoint</p>*@
+    </Authorized>
+    <NotAuthorized>
+        @*<p> <b>You are not Authenticated! . Please login to access the contents of this site. </b></p>*@
+    </NotAuthorized>
+    <Authorizing>
+        <p><em>Validating Anypoint Credentials</em></p>
+        <div class="spinner-border"></div>
+    </Authorizing>
+</AuthorizeView>
+
+<div class="wrapper">
+    @*<div class="container-fluid align-items-center">*@
+    <div class="form-group row ml-1 mb-0 align-items-center">
+        @*<img src="/images/MulesoftIntegration.jpg" height="430px" width="95%" />*@
+    </div>
+    @*</div>*@
+    <div class="bg-light container-fluid">
+        <div class="form-group row mb-0 align-items-center">
+            <img src="/images/MulesoftIntegration.jpg" height="45%" width="45%" />
+            @*<img src="/images/AnyPoint.jpg" height="23%" width="23%" />*@
+        </div>
+    </div>
+    <div class="bg-light container-fluid">
+        <div class="form-group row mb-0 align-items-center">
+            <label class="col-sm-10 col-form-label-lg align-items-center">What Would You Like To Do?</label>
+        </div>
+        <div class="form-group row mb-0 align-items-center">
+            <label class="col-sm-2 col-form-label">Onboarding</label>
+            <div class="col-sm-10">
+                <a href="about/Onboarding">Onboarding</a>
+            </div>
+        </div>
+        <div class="form-group row mb-0 align-items-center">
+            <label class="col-sm-2 col-form-label">Role Management</label>
+            <div class="col-sm-10">
+                <a href="apisubscription">RBAC</a>
+            </div>
+        </div>
+        <div class="form-group row mb-0 align-items-center">
+            <label class="col-sm-2 col-form-label">Visualize Data Plane</label>
+            <div class="col-sm-10">
+                <a href="mulesoft">MuleSoft</a>
+            </div>
+        </div>
+        <div class="form-group row mb-0 align-items-center">
+            <label class="col-sm-2 col-form-label">Learn More</label>
+            <div class="col-sm-10">
+                <a href="">Features</a>
+            </div>
+        </div>
+    </div>
+</div> 
+
